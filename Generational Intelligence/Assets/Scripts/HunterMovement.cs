@@ -20,6 +20,7 @@ public class HunterMovement : MonoBehaviour
     Vector2 startPos;
     bool isDead;
     bool touchedGoal;
+    bool touchedBorder;
     int numMovesMade;
 
     // Start is called before the first frame update
@@ -31,6 +32,7 @@ public class HunterMovement : MonoBehaviour
 
         isDead = false;
         touchedGoal = false;
+        touchedBorder = false;
         numMovesMade = 0;
 
         genes = new Vector2[lifeSpan];
@@ -39,14 +41,20 @@ public class HunterMovement : MonoBehaviour
             genes[i] = NewGene();
         }
 
-        float widthRange = Random.value * startPosition.GetComponent<SpriteRenderer>().bounds.size.x/2;
-        float widthHeight = Random.value * startPosition.GetComponent<SpriteRenderer>().bounds.size.y/2;
+        SetPosition();
+    }
+
+    private void SetPosition()
+    {
+        float widthRange = Random.value * startPosition.GetComponent<SpriteRenderer>().bounds.size.x / 2;
+        float widthHeight = Random.value * startPosition.GetComponent<SpriteRenderer>().bounds.size.y / 2;
 
         widthRange = Random.value > 0.5 ? -widthRange : widthRange;
         widthHeight = Random.value > 0.5 ? -widthHeight : widthHeight;
 
         startPos = new Vector2(startPosition.transform.position.x + widthRange, startPosition.transform.position.y + widthHeight);
         transform.position = startPos;
+
     }
 
     public void inheritGenes(Vector2[] parent)
@@ -92,13 +100,15 @@ public class HunterMovement : MonoBehaviour
     public void CopyGenes(Vector2[] genes) { this.genes = genes; }
     public int GetGenesUsed() { return this.numMovesMade; }
     public bool IsTouchingGoal() { return this.touchedGoal; }
+    public bool IsTouchingBorder() { return this.touchedBorder; }
 
     public void Reset()
     {
         isDead = false;
+        touchedBorder = false;
         numMovesMade = 0;
 
-        transform.position = startPos;
+        SetPosition();
     }
 
     public float GetFitness()
@@ -119,10 +129,9 @@ public class HunterMovement : MonoBehaviour
     {
         if(potentialParents.Count == 0)
         {
+            // Should never really be here.
             for(int i = 0; i < lifeSpan; i++)
                 genes[i] = Random.value > 1- mutationRate ? bestParent.genes[i] : NewGene();
-
-            Debug.Log("HERE");
             return;
         }
 
@@ -192,6 +201,8 @@ public class HunterMovement : MonoBehaviour
     {
         if (collision.tag == "Hunter")
             return;
+        else if (collision.tag == "Border")
+            touchedBorder = true;
         else if (collision.tag == "Finish")
         {
             touchedGoal = true;

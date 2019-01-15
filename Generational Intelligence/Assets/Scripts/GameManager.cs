@@ -5,8 +5,8 @@ using UnityEngine;
 public class GameManager : MonoBehaviour
 {
     // Publics:
-    //[Range(0.01f, 1)]
-     float mutationRate = 0.1f;
+    [Range(0.01f, 1)]
+    public float mutationRate = 0.1f;
     public GameObject hunterPrefab;
     public static List<GameObject> hunters;
     public static List<GameObject> winningHunters;
@@ -62,9 +62,9 @@ public class GameManager : MonoBehaviour
 
     void ResetLevel()
     {
-        hunterMovements[0] = GetBestParent();
+        hunterMovements[0].CopyGenes(GetBestParent().GetGenes());
         hunterMovements[0].Reset();
-        hunterMovements[0].GetComponent<SpriteRenderer>().color = Color.blue;
+        hunterMovements[0].GetComponent<SpriteRenderer>().color = Color.red;
 
         List<HunterMovement> potentialParents = new List<HunterMovement>();
         potentialParents.AddRange(winningHunterMovements);
@@ -78,6 +78,7 @@ public class GameManager : MonoBehaviour
         {
             hunterMovements[i].Reset();
             hunterMovements[i].Mutate(mutationRate, hunterMovements[0]);
+            hunterMovements[i].GetComponent<SpriteRenderer>().color = Color.white;
         }
 
         // Remaining 75% will be heavily influenced by Best, but will also mix with the remaining potentials.
@@ -85,8 +86,8 @@ public class GameManager : MonoBehaviour
         {
             hunterMovements[i].Reset();
             hunterMovements[i].Mutate(mutationRate, hunterMovements[0], potentialParents);
+            hunterMovements[i].GetComponent<SpriteRenderer>().color = Color.white;
         }
-
         
         generation++;
         completedGeneration = false;
@@ -102,7 +103,7 @@ public class GameManager : MonoBehaviour
         HunterMovement toReturn = null;
         float fitness;
 
-        // If someone won, their fitness = moves made. The less, the better;
+        // If someone won, their fitness = moves made. The less, the better.
         if (winningHunters.Count != 0)
         {
             fitness = HunterMovement.lifeSpan;
@@ -123,6 +124,9 @@ public class GameManager : MonoBehaviour
         fitness = 100;
         foreach(HunterMovement hm in hunterMovements)
         {
+            if (hm.IsTouchingBorder())
+                continue;
+
             averageFitness += hm.GetFitness();
             if (hm.GetFitness() < fitness)
             {
