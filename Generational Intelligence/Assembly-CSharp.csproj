@@ -60,6 +60,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\Scripts\GameManager.cs" />
     <Compile Include="Assets\Scripts\HunterMovement.cs" />
     <Reference Include="Unity.TextMeshPro.Editor">
       <HintPath>C:/Users/student/Documents/GitHub/2D-GenerationalIntelligence/Generational Intelligence/Library/ScriptAssemblies/Unity.TextMeshPro.Editor.dll</HintPath>

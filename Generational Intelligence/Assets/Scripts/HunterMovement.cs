@@ -5,19 +5,24 @@ using UnityEngine;
 public class HunterMovement : MonoBehaviour
 {
     // Publics:
-    [Range(200, 1000)]
-    int lifeSpan = 500;
+    //[Range(200, 3000)]
+    int lifeSpan = 100;
     [Range(2f, 20f)]
-    public float hunterSpeed = 12f;
+    public float hunterSpeed = 10f;
 
     // Privates:
     GameObject startPosition;
     GameObject goal;
     CircleCollider2D cc2d;
-    Vector2[] directions;
+    Vector2[] genes;
+    Vector2 startPos;
     bool isDead;
     int numMovesMade;
     int moveDied;
+
+    void Awake()
+    {
+    }
 
     // Start is called before the first frame update
     void Start()
@@ -30,38 +35,89 @@ public class HunterMovement : MonoBehaviour
         numMovesMade = 0;
         moveDied = 0;
 
-        directions = new Vector2[lifeSpan];
+        genes = new Vector2[lifeSpan];
         for (int i = 0; i < lifeSpan; i++)
         {
             float x = Random.value > 0.5 ? -Random.value : Random.value;
             float y = Random.value > 0.5 ? -Random.value : Random.value;
-            directions[i] = new Vector2(x, y);
+            genes[i] = new Vector2(x, y);
         }
 
-        transform.position = startPosition.transform.position;
+        float widthRange = Random.value * startPosition.GetComponent<SpriteRenderer>().bounds.size.x/2;
+        float widthHeight = Random.value * startPosition.GetComponent<SpriteRenderer>().bounds.size.y/2;
+
+        widthRange = Random.value > 0.5 ? -widthRange : widthRange;
+        widthHeight = Random.value > 0.5 ? -widthHeight : widthHeight;
+
+        startPos = new Vector2(startPosition.transform.position.x + widthRange, startPosition.transform.position.y + widthHeight);
+        transform.position = startPos;
     }
 
-    void inheritGenes(Vector2[] parent)
+    public void inheritGenes(Vector2[] parent)
     {
-        // Inherit first 33% of genes:
-        for (int i = 0; i < parent.Length / 3; i++)
+        
+        // Inherit 50% of the first 50% of genes:
+        for (int i = 0; i < parent.Length; i++)
         {
-            directions[i] = parent[i];
+            genes[i] = Random.value > 0.5 ? parent[i] : genes[i];
         }
-
-        // Then, 50% chance of inheriting next 33%:
-        for (int i = parent.Length / 3; i < parent.Length * 2 / 3; i++)
+        /*
+        // Then, 10% chance of inheriting next 67%:
+        for (int i = parent.Length / 2; i < parent.Length; i++)
         {
-            directions[i] = Random.value > 0.5 ? parent[i] : directions[i];
+            genes[i] = Random.value > 0.9 ? parent[i] : genes[i];
         }
-
+        /*
         // Then, 25% change of inheriting last 33%:
         for (int i = parent.Length * 2 / 3; i < parent.Length; i++)
         {
-            directions[i] = Random.value > 0.67 ? parent[i] : directions[i];
+            genes[i] = Random.value > 0.67 ? parent[i] : genes[i];
+        }
+        */
+        // Therefore, ~67% of the parent is copied over. This feels high ...
+        /*
+        // Testing --
+        for(int i = 0; i < parent.Length; i++)
+        {
+            genes[i] = parent[i];
         }
 
-        // Therefore, ~67% of the parent is copied over. This feels high ...
+        for(int i = 0; i < parent.Length; i++)
+        {
+            genes[i] = Random.value > 0.5 ? genes[i] : parent[i];
+        }*/
+
+        // 50% of all genes:
+    }
+
+    public Vector2 GetStartPos() { return this.startPos; }
+    public bool IsDead() { return this.isDead; }
+    public Vector2[] GetGenes() { return this.genes; }
+    public void CopyGenes(Vector2[] genes) { this.genes = genes; }
+
+    public void Reset()
+    {
+        isDead = false;
+        numMovesMade = 0;
+        moveDied = 0;
+
+        transform.position = startPos;
+    }
+
+    public Vector2[] GetUsedGenes()
+    {
+        Vector2[] toReturn = new Vector2[numMovesMade + 1];
+        for (int i = 0; i < numMovesMade; i++)
+            toReturn[i] = genes[i];
+        return toReturn;
+    }
+
+    public float Fitness()
+    {
+        // Soooo .. the closer you get, in the fewest moves, yields a higher fitness.
+        float distance = Mathf.Abs(Vector2.Distance(transform.position, goal.transform.position));
+        //float fitness = distance / numMovesMade;
+        return distance;
     }
 
     // Update is called once per frame
@@ -70,7 +126,7 @@ public class HunterMovement : MonoBehaviour
         if (isDead)
             return;
 
-        transform.Translate(directions[numMovesMade] * hunterSpeed * Time.deltaTime);
+        transform.Translate(genes[numMovesMade] * hunterSpeed * Time.deltaTime);
         numMovesMade++;
 
         CheckDeath();
@@ -84,6 +140,9 @@ public class HunterMovement : MonoBehaviour
 
     void OnTriggerEnter2D(Collider2D collision)
     {
-        Debug.Log("colided");
+        if (collision.tag == "Hunter")
+            return;
+
+        isDead = true;
     }
 }
