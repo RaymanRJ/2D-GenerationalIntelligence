@@ -321,7 +321,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   hunterPrefab: {fileID: 3896373656683715421, guid: 79ffb9b2b21188846a6685d68992fdcf,
     type: 3}
-  initialHunters: 5
   goal: {fileID: 1077832849}
   startPosition: {fileID: 1655781366}
 --- !u!4 &1090998787

@@ -1,12 +1,14 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using Random = UnityEngine.Random;
 using UnityEngine;
 
 public class HunterMovement : MonoBehaviour
 {
     // Publics:
     //[Range(200, 3000)]
-    int lifeSpan = 100;
+    public static int lifeSpan = 1000;
     [Range(2f, 20f)]
     public float hunterSpeed = 10f;
 
@@ -17,12 +19,8 @@ public class HunterMovement : MonoBehaviour
     Vector2[] genes;
     Vector2 startPos;
     bool isDead;
+    bool touchedGoal;
     int numMovesMade;
-    int moveDied;
-
-    void Awake()
-    {
-    }
 
     // Start is called before the first frame update
     void Start()
@@ -32,15 +30,13 @@ public class HunterMovement : MonoBehaviour
         cc2d = GetComponent<CircleCollider2D>();
 
         isDead = false;
+        touchedGoal = false;
         numMovesMade = 0;
-        moveDied = 0;
 
         genes = new Vector2[lifeSpan];
         for (int i = 0; i < lifeSpan; i++)
         {
-            float x = Random.value > 0.5 ? -Random.value : Random.value;
-            float y = Random.value > 0.5 ? -Random.value : Random.value;
-            genes[i] = new Vector2(x, y);
+            genes[i] = NewGene();
         }
 
         float widthRange = Random.value * startPosition.GetComponent<SpriteRenderer>().bounds.size.x/2;
@@ -56,7 +52,7 @@ public class HunterMovement : MonoBehaviour
     public void inheritGenes(Vector2[] parent)
     {
         
-        // Inherit 50% of the first 50% of genes:
+        // Inherit 50% of the parent of genes:
         for (int i = 0; i < parent.Length; i++)
         {
             genes[i] = Random.value > 0.5 ? parent[i] : genes[i];
@@ -94,14 +90,68 @@ public class HunterMovement : MonoBehaviour
     public bool IsDead() { return this.isDead; }
     public Vector2[] GetGenes() { return this.genes; }
     public void CopyGenes(Vector2[] genes) { this.genes = genes; }
+    public int GetGenesUsed() { return this.numMovesMade; }
+    public bool IsTouchingGoal() { return this.touchedGoal; }
 
     public void Reset()
     {
         isDead = false;
         numMovesMade = 0;
-        moveDied = 0;
 
         transform.position = startPos;
+    }
+
+    public float GetFitness()
+    {
+        // Noone here touched the goal, else this wouldn't have been reached.
+        return Mathf.Abs(Vector2.Distance(this.transform.position, goal.transform.position));
+    }
+
+    public void Mutate(float mutationRate, HunterMovement bestParent)
+    {
+        for(int i = 0; i < lifeSpan; i++)
+        {
+            genes[i] = Random.value > mutationRate ? bestParent.genes[i] : NewGene();
+        }
+    }
+
+    public void Mutate(float mutationRate, HunterMovement bestParent, List<HunterMovement> potentialParents)
+    {
+        if(potentialParents.Count == 0)
+        {
+            for(int i = 0; i < lifeSpan; i++)
+                genes[i] = Random.value > 1- mutationRate ? bestParent.genes[i] : NewGene();
+
+            Debug.Log("HERE");
+            return;
+        }
+
+        HunterMovement parent1, parent2;
+
+        // 50% chance parent1 = best
+        parent1 = Random.value > .5f ? bestParent : potentialParents[(int)Mathf.Clamp(Random.value * potentialParents.Count,0, potentialParents.Count)];
+
+        // Parent 2 is random from the potentials
+        parent2 = potentialParents[(int)Mathf.Clamp(Random.value * potentialParents.Count, 0, potentialParents.Count)];
+
+        // 50/50 from the two parents, with added potential mutation:
+
+        for(int i = 0; i < lifeSpan; i++)
+        {
+            if (i % 2 == 0)
+                genes[i] = parent1.genes[i];
+            else
+                genes[i] = parent2.genes[i];
+
+            genes[i] = Random.value < 1 - mutationRate ? bestParent.genes[i] : NewGene();
+        }
+    }
+
+    private Vector2 NewGene()
+    {
+        float x = Random.value > 0.5 ? -Random.value : Random.value;
+        float y = Random.value > 0.5 ? -Random.value : Random.value;
+        return new Vector2(x, y).normalized;
     }
 
     public Vector2[] GetUsedGenes()
@@ -115,7 +165,7 @@ public class HunterMovement : MonoBehaviour
     public float Fitness()
     {
         // Soooo .. the closer you get, in the fewest moves, yields a higher fitness.
-        float distance = Mathf.Abs(Vector2.Distance(transform.position, goal.transform.position));
+        float distance = 1/Mathf.Pow(Vector2.Distance(goal.transform.position, transform.position), 2);
         //float fitness = distance / numMovesMade;
         return distance;
     }
@@ -142,6 +192,12 @@ public class HunterMovement : MonoBehaviour
     {
         if (collision.tag == "Hunter")
             return;
+        else if (collision.tag == "Finish")
+        {
+            touchedGoal = true;
+            GameManager.winningHunters.Add(gameObject);
+            GameManager.winningHunterMovements.Add(this);
+        }
 
         isDead = true;
     }
