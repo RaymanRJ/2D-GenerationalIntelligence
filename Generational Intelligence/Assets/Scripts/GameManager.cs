@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
@@ -8,12 +9,18 @@ public class GameManager : MonoBehaviour
     [Range(0.01f, 1)]
     public float mutationRate = 0.1f;
     public GameObject hunterPrefab;
+    public Text generationText;
+    public Text timeText;
     public static List<GameObject> hunters;
     public static List<GameObject> winningHunters;
     public static List<HunterMovement> winningHunterMovements;
 
     //[Range(1, 200)]
     int initialHunters = 100;
+    int hours = 0;
+    int minutes = 0;
+    int seconds = 0;
+    int milliseconds = 0;
     float averageFitness;
     public Transform goal;
     public Transform startPosition;
@@ -40,11 +47,17 @@ public class GameManager : MonoBehaviour
 
         generation = 0;
         completedGeneration = false;
+        generationText.text = "Generation = " + generation;
+        timeText.text = "Time = " + hours + ":" + minutes + ":" + seconds + "." + milliseconds;
     }
 
     // Update is called once per frame
     void Update()
     {
+        float time = Time.realtimeSinceStartup;
+        hours = (int) Mathf.Ceil(time / 3600000);
+        timeText.text = "Time = " + Time.realtimeSinceStartup + "s";
+
         if (completedGeneration)
             return;
 
@@ -90,6 +103,7 @@ public class GameManager : MonoBehaviour
         }
         
         generation++;
+        generationText.text = "Generation = " + generation;
         completedGeneration = false;
         averageFitness = 0;
         potentialParents.Clear();
