@@ -6,8 +6,8 @@ using UnityEngine.UI;
 public class GameManager : MonoBehaviour
 {
     // Publics:
-    [Range(0.01f, 1)]
-    public float mutationRate = 0.1f;
+    [Range(0.0001f, 1)]
+    public float mutationRate = 0.001f;
     public GameObject hunterPrefab;
     public Text generationText;
     public Text timeText;
@@ -47,16 +47,14 @@ public class GameManager : MonoBehaviour
 
         generation = 0;
         completedGeneration = false;
-        generationText.text = "Generation = " + generation;
+        generationText.text = "Generation " + generation;
         timeText.text = "Time = " + hours + ":" + minutes + ":" + seconds + "." + milliseconds;
     }
 
     // Update is called once per frame
     void Update()
     {
-        float time = Time.realtimeSinceStartup;
-        hours = (int) Mathf.Ceil(time / 3600000);
-        timeText.text = "Time = " + Time.realtimeSinceStartup + "s";
+        timeText.text = GetTime();
 
         if (completedGeneration)
             return;
@@ -71,6 +69,18 @@ public class GameManager : MonoBehaviour
         completedGeneration = true;
 
         ResetLevel();
+    }
+
+    string GetTime()
+    {
+        float time = Time.realtimeSinceStartup;
+        int seconds = (int) time % 60;
+        int minutes = (int) (time / 60) % 60;
+        int hours = (int) (time / (60 * 60)) % 24;
+
+        return (hours < 10 ? "0" + hours : hours.ToString()) + ":"
+            + (minutes < 10 ? "0" + minutes : minutes.ToString()) + ":"
+            + (seconds < 10 ? "0" + seconds : seconds.ToString());
     }
 
     void ResetLevel()
@@ -103,24 +113,23 @@ public class GameManager : MonoBehaviour
         }
         
         generation++;
-        generationText.text = "Generation = " + generation;
+        generationText.text = "Generation " + generation;
         completedGeneration = false;
         averageFitness = 0;
         potentialParents.Clear();
         winningHunters.Clear();
         winningHunterMovements.Clear();
-        Debug.Log("Generation = " + generation);
+        Debug.Log("Generation " + generation);
     }
 
     HunterMovement GetBestParent()
     {
         HunterMovement toReturn = null;
-        float fitness;
+        float fitness = HunterMovement.lifeSpan;
 
         // If someone won, their fitness = moves made. The less, the better.
         if (winningHunters.Count != 0)
         {
-            fitness = HunterMovement.lifeSpan;
             foreach (HunterMovement hm in winningHunterMovements)
             {
                 averageFitness += hm.GetGenesUsed();
@@ -135,7 +144,6 @@ public class GameManager : MonoBehaviour
 
         // Otherwise, use their distance from the goal:
 
-        fitness = 100;
         foreach(HunterMovement hm in hunterMovements)
         {
             if (hm.IsTouchingBorder())
@@ -150,6 +158,6 @@ public class GameManager : MonoBehaviour
         }
 
         averageFitness /= hunterMovements.Count;
-        return toReturn;
+        return toReturn == null ? hunterMovements[0] : toReturn;
     }
 }

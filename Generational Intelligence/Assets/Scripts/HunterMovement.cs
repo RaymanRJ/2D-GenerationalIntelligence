@@ -121,7 +121,7 @@ public class HunterMovement : MonoBehaviour
     {
         for(int i = 0; i < lifeSpan; i++)
         {
-            genes[i] = Random.value > mutationRate ? bestParent.genes[i] : NewGene();
+            genes[i] = Random.value > 1 - mutationRate ? bestParent.genes[i] : NewGene();
         }
     }
 
@@ -131,17 +131,19 @@ public class HunterMovement : MonoBehaviour
         {
             // Should never really be here.
             for(int i = 0; i < lifeSpan; i++)
-                genes[i] = Random.value > 1- mutationRate ? bestParent.genes[i] : NewGene();
+                genes[i] = Random.value < 1 - mutationRate ? bestParent.genes[i] : NewGene();
             return;
         }
 
         HunterMovement parent1, parent2;
 
+        int randomParentIndex = Random.Range(0, potentialParents.Count - 1);
         // 50% chance parent1 = best
-        parent1 = Random.value > .5f ? bestParent : potentialParents[(int)Mathf.Clamp(Random.value * potentialParents.Count,0, potentialParents.Count)];
+        parent1 = Random.value > .5f ? bestParent : potentialParents[randomParentIndex];
 
         // Parent 2 is random from the potentials
-        parent2 = potentialParents[(int)Mathf.Clamp(Random.value * potentialParents.Count, 0, potentialParents.Count)];
+        randomParentIndex = Random.Range(0, potentialParents.Count - 1);
+        parent2 = potentialParents[randomParentIndex];
 
         // 50/50 from the two parents, with added potential mutation:
 
@@ -160,6 +162,7 @@ public class HunterMovement : MonoBehaviour
     {
         float x = Random.value > 0.5 ? -Random.value : Random.value;
         float y = Random.value > 0.5 ? -Random.value : Random.value;
+
         return new Vector2(x, y).normalized;
     }
 
