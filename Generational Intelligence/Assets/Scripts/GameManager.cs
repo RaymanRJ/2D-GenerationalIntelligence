@@ -7,7 +7,7 @@ public class GameManager : MonoBehaviour
 {
     // Publics:
     [Range(0.0001f, 1)]
-    public float mutationRate = 0.001f;
+    public float mutationRate = 0.01f;
     public GameObject hunterPrefab;
     public Text generationText;
     public Text timeText;
